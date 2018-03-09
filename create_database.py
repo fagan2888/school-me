@@ -37,4 +37,5 @@ def make_anagrafica():
             new_cols.append(new_c)
 
         anagr.columns = [a.lower() for a in new_cols]
-        return pd.concat(tp, ignore_index = True)
+        tp.append(anagr)
+    return pd.concat(tp, ignore_index = True)
