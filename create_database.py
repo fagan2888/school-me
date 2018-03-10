@@ -39,3 +39,29 @@ def make_anagrafica():
         anagr.columns = [a.lower() for a in new_cols]
         tp.append(anagr)
     return pd.concat(tp, ignore_index = True)
+
+def make_docenti():
+    '''
+    Return a combined multi-indexed version of 'docenti'
+    '''
+    doc = pd.read_table('data/DOCTIT20161720170831.csv', delimiter=',', encoding = "ISO-8859-1")
+    sup = pd.read_table('data/DOCSUP20161720170831.csv', delimiter=',', encoding = "ISO-8859-1")
+    doc.drop(columns = 'ANNOSCOLASTICO', inplace = True)
+    sup.drop(columns = 'ANNOSCOLASTICO', inplace = True)
+
+    doc.rename({'DOCENTITITOLARIMASCHI': 'M', 'DOCENTITITOLARIFEMMINE': 'F'}, axis = 1, inplace = True)
+    sup.rename({'DOCENTISUPPLENTIMASCHI': 'M', 'DOCENTISUPPLENTIFEMMINE': 'F'}, axis = 1, inplace = True)
+
+    # Exclude 'TIPOSUPPLENZA' by grouping and summing its vaules
+    sup = sup.groupby(['PROVINCIA', 'ORDINESCUOLA', 'TIPOPOSTO', 'FASCIAETA']).sum().reset_index()
+
+    doc['POSTO'] = 'DIRUOLO'
+    sup['POSTO'] = 'SUPPLENZA'
+    join_on = ['PROVINCIA', 'ORDINESCUOLA', 'TIPOPOSTO', 'FASCIAETA', 'POSTO', 'M', 'F']
+    merged_df = pd.merge(doc, sup,  how='outer', on=join_on, sort=True)
+
+    df = pd.pivot_table(merged_df,
+                        values=['M','F'],
+                        index=['PROVINCIA', 'ORDINESCUOLA'],
+                        columns=['POSTO', 'TIPOPOSTO', 'FASCIAETA'])
+    return df
