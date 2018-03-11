@@ -4,6 +4,7 @@ import numpy as np
 import glob
 from sqlalchemy import create_engine
 from dict_rename import *
+from functools import reduce
 
 def files_category(ff):
     '''
@@ -29,12 +30,7 @@ def make_anagrafica():
         anagr['tag'] = tag
 
         # standardise column name using custom dictionary
-        new_cols = []
-        for c in anagr.columns:
-            new_c = c
-            if c in rename_anagrafica:
-                new_c = rename_anagrafica[c]
-            new_cols.append(new_c)
+        new_cols = [dict_rename[c] if c in dict_rename.keys() else c for c in anagr.columns ]
 
         anagr.columns = [a.lower() for a in new_cols]
         tp.append(anagr)
@@ -65,3 +61,49 @@ def make_docenti():
                         index=['PROVINCIA', 'ORDINESCUOLA'],
                         columns=['POSTO', 'TIPOPOSTO', 'FASCIAETA'])
     return df
+
+
+def make_edilizia():
+    '''
+    Join all edilizia tables into one
+    '''
+    dfs = []
+    for f in files_category('*EDI*'):
+        edi = pd.read_table(f, delimiter=',', encoding = "ISO-8859-1")
+        edi.columns = edi.columns.str.strip()
+        dfs.append(edi)
+
+    join_on = ['ANNOSCOLASTICO', 'CODICESCUOLA', 'CODICEEDIFICIO']
+    df_final = reduce(lambda left,right: pd.merge(left,right,on=join_on), dfs)
+
+    #Replace missing values
+    missing = ['Informazione assente', '-']
+    for m in missing:
+        df_final.replace(m, np.nan, inplace = True)
+
+    #Use only seismicity values S
+    df_final.VINCOLIZONASISMICA = df_final.VINCOLIZONASISMICA.map(seismicity)
+
+    new_cols = [dict_rename[c] if c in dict_rename.keys() else c for c in df_final.columns ]
+    return df_final
+
+dfs = []
+for sub in ['CORSOETA', 'CORSOINDCLA','ITASTRACI','SECGRADOIND','TEMPOSCUOLA']:
+    dfs = []
+    for f in files_category('*{}*'.format(sub)):
+        alu = pd.read_table(f, delimiter=',', encoding = "ISO-8859-1")
+        alu.columns = alu.columns.str.strip()
+        alu.rename({'ANNOCORSOCLASSE': 'ANNOCORSO'}, axis = 1, inplace = True)
+
+        if 'STA' in f:
+            tag = 'statale'
+        else:
+            tag = 'paritaria'
+        alu['tag'] = tag
+
+        dfs.append(alu)
+    df_final = pd.concat(dfs, axis = 0)
+    print(df_final.columns)
+
+join_on = ['ANNOSCOLASTICO', 'CODICESCUOLA', 'ORDINESCUOLA', 'ANNOCORSO','tag']
+df_final = reduce(lambda left,right: pd.merge(left,right,how = 'outer',on=join_on), dfs)
