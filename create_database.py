@@ -12,6 +12,13 @@ def files_category(ff):
     '''
     return glob.glob('data/{}'.format(ff))
 
+def stat_par(f):
+    if 'STA' in f:
+        tag = 'statale'
+    else:
+        tag = 'paritaria'
+    return tag
+
 def make_anagrafica():
     '''
     Combine all 'anagarfica' files into one dataframe.
@@ -23,11 +30,7 @@ def make_anagrafica():
         anagr = pd.read_table(f, delimiter=',', encoding = "ISO-8859-1")
 
         #need to compute tag from file name
-        if 'STAT' in f:
-            tag = 'statale'
-        else:
-            tag = 'paritaria'
-        anagr['tag'] = tag
+        anagr['tag'] = stat_par(f)
 
         # standardise column name using custom dictionary
         new_cols = [dict_rename[c] if c in dict_rename.keys() else c for c in anagr.columns ]
@@ -62,7 +65,6 @@ def make_docenti():
                         columns=['POSTO', 'TIPOPOSTO', 'FASCIAETA'])
     return df
 
-
 def make_edilizia():
     '''
     Join all edilizia tables into one
@@ -87,23 +89,31 @@ def make_edilizia():
     new_cols = [dict_rename[c] if c in dict_rename.keys() else c for c in df_final.columns ]
     return df_final
 
-dfs = []
-for sub in ['CORSOETA', 'CORSOINDCLA','ITASTRACI','SECGRADOIND','TEMPOSCUOLA']:
-    dfs = []
-    for f in files_category('*{}*'.format(sub)):
-        alu = pd.read_table(f, delimiter=',', encoding = "ISO-8859-1")
-        alu.columns = alu.columns.str.strip()
-        alu.rename({'ANNOCORSOCLASSE': 'ANNOCORSO'}, axis = 1, inplace = True)
+def make_students():
+    '''
+    Return two dataframes
+       - corso_eta contains students per age cohorts
+       - corso_tot contains total students per class with nationality info
+    '''
+    # Not using TEMPOSCUOLA and SECGRADOIND
+    df_final = []
+    for sub in ['CORSOETA', 'CORSOINDCLA','ITASTRACI']:
+        dfs = []
+        for f in files_category('*{}*'.format(sub)):
+            alu = pd.read_table(f, delimiter=',', encoding = "ISO-8859-1")
+            alu.columns = alu.columns.str.strip()
+            #rename ANNOCORSOCLASSE for consistency with other tables
+            alu.rename({'ANNOCORSOCLASSE': 'ANNOCORSO'}, axis = 1, inplace = True)
+            alu['tag'] = stat_par(f)
+            dfs.append(alu)
+        dfcomb = pd.concat(dfs, axis = 0)
+        df_final.append(dfcomb)
 
-        if 'STA' in f:
-            tag = 'statale'
-        else:
-            tag = 'paritaria'
-        alu['tag'] = tag
+    corso_eta = df_final[0]
 
-        dfs.append(alu)
-    df_final = pd.concat(dfs, axis = 0)
-    print(df_final.columns)
+    join_on = ['ANNOSCOLASTICO', 'CODICESCUOLA', 'ORDINESCUOLA', 'ANNOCORSO', 'tag']
+    corso_tot = pd.merge(df_final[1],df_final[2], how = 'left', on=join_on)
+    new_cols = [dict_rename[c] if c in dict_rename.keys() else c for c in corso_tot.columns ]
+    corso_tot.columns = new_cols
 
-join_on = ['ANNOSCOLASTICO', 'CODICESCUOLA', 'ORDINESCUOLA', 'ANNOCORSO','tag']
-df_final = reduce(lambda left,right: pd.merge(left,right,how = 'outer',on=join_on), dfs)
+    return corso_eta, corso_tot

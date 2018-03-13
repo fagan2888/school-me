@@ -15,8 +15,13 @@ dict_rename={'ANNOSCOLASTICO': 'anno',
            'INDIRIZZOEMAILSCUOLA': 'email',
            'INDIRIZZOPECSCUOLA': 'pec',
            'SITOWEBSCUOLA': 'website',
-           'SEDESCOLASTICA': 'sede_scolastica':
-           'ANNOCORSOCLASSE': 'ANNOCORSO'}
+           'SEDESCOLASTICA': 'sede_scolastica',
+           'ANNOCORSOCLASSE': 'ANNOCORSO',
+           'ALUNNICITTADINANZAITALIANA': 'ITALIAN',
+           'ALUNNICITTADINANZANONITALIANA': 'NON_ITALIAN',
+           'ALUNNICITTADINANZANONITALIANAPAESIUE': 'EU',
+           'ALUNNICITTADINANZANONITALIANAPAESINONUE': 'NON_EU'
+           }
 
 seismicity = {'Non classificato a rischio': 0,
 'Rischio sismicitÃ\xa0 medio/alta (S=9)': 9,
