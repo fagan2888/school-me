@@ -24,7 +24,15 @@ dict_rename={'ANNOSCOLASTICO': 'anno',
            }
 
 seismicity = {'Non classificato a rischio': 0,
-'Rischio sismicitÃ\xa0 medio/alta (S=9)': 9,
-'Rischio elevata sismicitÃ\xa0 (S=12)': 12,
-'Rischio bassa sismicitÃ\xa0 (S=6)': 6,
-'Non Comunicato': '-'}
+              'Rischio sismicitÃ\xa0 medio/alta (S=9)': 9,
+              'Rischio elevata sismicitÃ\xa0 (S=12)': 12,
+              'Rischio bassa sismicitÃ\xa0 (S=6)': 6,
+              'Non Comunicato': '-'}
+
+doc_comuni = {'Ripartizione geografica': 'ripartizione',
+              'Denominazione regione': 'regione',
+              'Denominazione in italiano': 'città',
+              'Denominazione provincia': 'provincia',
+              'Flag Comune capoluogo di provincia': 'comune_capolouogo',
+              'Popolazione legale 2011 (09/10/2011)': 'popolazione (09/10/2011)',
+              'Codice Comune formato alfanumerico': 'codice_comune'}
