@@ -2,7 +2,6 @@
 import pandas as pd
 import numpy as np
 import glob
-from sqlalchemy import create_engine
 from dict_rename import *
 from functools import reduce
 
@@ -112,8 +111,23 @@ def make_students():
     corso_eta = df_final[0]
 
     join_on = ['ANNOSCOLASTICO', 'CODICESCUOLA', 'ORDINESCUOLA', 'ANNOCORSO', 'tag']
-    corso_tot = pd.merge(df_final[1],df_final[2], how = 'left', on=join_on)
+    corso_tot = df_final[2]
     new_cols = [dict_rename[c] if c in dict_rename.keys() else c for c in corso_tot.columns ]
     corso_tot.columns = new_cols
 
     return corso_eta, corso_tot
+
+def make_demographic():
+    '''
+    return dataframe with population per city
+    '''
+    demog = pd.read_excel('data/Elenco-codici-statistici-e-denominazioni-al-01_01_2017.xls',
+                           dtype = {'Codice Comune formato alfanumerico': str})
+    mask = demog['Denominazione provincia'] == '-'
+    demog.loc[mask,'Denominazione provincia'] = demog.loc[mask, 'Denominazione Città metropolitana']
+
+    mask = demog.columns.isin(doc_comuni.keys())
+    cols = demog.columns[mask]
+
+    demog = demog[cols].rename(columns = doc_comuni)
+    return demog
