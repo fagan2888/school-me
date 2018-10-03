@@ -35,4 +35,4 @@ doc_comuni = {'Ripartizione geografica': 'ripartizione',
               'Denominazione provincia': 'provincia',
               'Flag Comune capoluogo di provincia': 'comune_capolouogo',
               'Popolazione legale 2011 (09/10/2011)': 'popolazione (09/10/2011)',
-              'Codice Comune formato alfanumerico': 'codice_comune'}
+              'Codice Catastale del comune': 'codice_comune'}
