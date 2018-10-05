@@ -6,16 +6,18 @@ from matplotlib.colors import Normalize
 from matplotlib import cm
 from config import MAPBOX_APIKEY
 
+# provinces: https://gist.github.com/datajournalism-it/212e7134625fbee6f9f7?short_path=2680efd
+
 class MakeGeoMap:
 
-    def __init__(self, metric, cmap):
-        self.regions_json =  self.regions_json('italy-regions.json')
+    def __init__(self, metric, cmap, filename, type):
+        self.regions_json =  self.regions_json(filename)
         self.len_regions = len(self.regions_json['features'])
         self.metric = metric
         self.cmap = cmap
+        self.type = type
 
-    @staticmethod
-    def regions_json(filename):
+    def regions_json(self, filename):
         """
         Reutnr the geojson file
         """
@@ -44,7 +46,12 @@ class MakeGeoMap:
         return lons, lats
 
     def regions_names(self):
-        return [self.regions_json['features'][k]['properties']['name'] for k in range(self.len_regions)]
+            if self.type == 'region':
+                name_key = 'name'
+            elif self.type == 'province':
+                name_key = 'NOME_PRO'
+
+            return [self.regions_json['features'][k]['properties'][name_key] for k in range(self.len_regions)]
 
     def match_regions(self):
         """
@@ -57,11 +64,11 @@ class MakeGeoMap:
         l = []
         for r1 in self.regions_names():
             for r2 in self.metric.index:
-                r11 = r1.replace('-', ' ')
+                r11 = r1.replace('-', ' ').lower()
                 r22 = r2.replace('-', ' ').lower()
                 l.append([r1,r2,fuzz.ratio(r11, r22)])
 
-        matched = np.array([x for x in l if x[2] > 75])
+        matched = np.array([x for x in l if x[2] > 80])
 
         return {key: value for (key, value) in matched[:,[1,0]]}
 
@@ -69,10 +76,14 @@ class MakeGeoMap:
         """
         Return a reindexed dataframe with the region names from geojson
         """
-        tmp = self.metric
+        tmp = self.metric.copy()
         tmp.index = tmp.index.map(self.match_regions())
         #give the same index order as the geojson
-        return tmp.reindex(index = self.regions_names())
+        out = tmp.reindex(index = self.regions_names())
+        return out
+        #index_name = out.index.name
+
+        #return out.reset_index().dropna().set_index(index_name)[self.metric.name]
 
     def make_source(self):
         """
